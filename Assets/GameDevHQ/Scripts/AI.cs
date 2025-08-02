@@ -11,31 +11,31 @@ public class AI : MonoBehaviour
 
     private NavMeshAgent _navMeshAgent;
 
-    void Start()
+    void OnEnable()
     {
         _navMeshAgent = GetComponent<NavMeshAgent>();
 
         if (_navMeshAgent != null && startPoint != null && endPoint != null)
         {
-            // Move the duck to the start position first
+            // Set position and start moving to the endpoint
             transform.position = startPoint.position;
-
-            // Then set its destination to the end point
+            _navMeshAgent.Warp(startPoint.position); // Ensures NavMeshAgent is synced
             _navMeshAgent.SetDestination(endPoint.position);
         }
         else
         {
-            Debug.LogWarning("Missing NavMeshAgent or points not assigned.");
+            Debug.LogWarning("AI is missing required components or points.");
         }
     }
 
     void Update()
     {
-        // Check if duck reached end point
+        // Check if duck reached the endpoint
         if (!_navMeshAgent.pathPending && _navMeshAgent.remainingDistance <= _navMeshAgent.stoppingDistance)
         {
             Debug.Log("Duck reached endpoint!");
-            Destroy(gameObject); // Or trigger escape logic
+            // Instead of Destroy, return to pool
+            SpawnManager.Instance.ReturnToPool(gameObject);
         }
     }
 }
