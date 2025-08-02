@@ -5,41 +5,37 @@ using UnityEngine.AI;
 
 public class AI : MonoBehaviour
 {
-    [Header("List of waypoints for duck to fly between")]
-    [SerializeField] private List<Transform> _Waypoints;
+    [Header("Duck Flight Path")]
+    [SerializeField] private Transform startPoint;
+    [SerializeField] private Transform endPoint;
 
-    private NavMeshAgent _NavMeshAgent;
+    private NavMeshAgent _navMeshAgent;
 
     void Start()
     {
-        _NavMeshAgent = GetComponent<NavMeshAgent>();
+        _navMeshAgent = GetComponent<NavMeshAgent>();
 
-        if (_NavMeshAgent != null && _Waypoints.Count > 0)
+        if (_navMeshAgent != null && startPoint != null && endPoint != null)
         {
-            // Set a random starting destination from the waypoint list
-            _NavMeshAgent.destination = _Waypoints[Random.Range(0, _Waypoints.Count)].position;
+            // Move the duck to the start position first
+            transform.position = startPoint.position;
+
+            // Then set its destination to the end point
+            _navMeshAgent.SetDestination(endPoint.position);
         }
         else
         {
-            Debug.LogWarning("NavMeshAgent or Waypoints not properly assigned.");
+            Debug.LogWarning("Missing NavMeshAgent or points not assigned.");
         }
     }
 
     void Update()
     {
-        // Optional: Check if agent reached destination and pick a new one
-        if (!_NavMeshAgent.pathPending && _NavMeshAgent.remainingDistance <= _NavMeshAgent.stoppingDistance)
+        // Check if duck reached end point
+        if (!_navMeshAgent.pathPending && _navMeshAgent.remainingDistance <= _navMeshAgent.stoppingDistance)
         {
-            SetNewDestination();
-        }
-    }
-
-    void SetNewDestination()
-    {
-        if (_Waypoints.Count > 0)
-        {
-            Vector3 nextPos = _Waypoints[Random.Range(0, _Waypoints.Count)].position;
-            _NavMeshAgent.SetDestination(nextPos);
+            Debug.Log("Duck reached endpoint!");
+            Destroy(gameObject); // Or trigger escape logic
         }
     }
 }
