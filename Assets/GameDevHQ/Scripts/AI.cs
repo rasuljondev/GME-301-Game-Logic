@@ -43,6 +43,8 @@ public class AI : MonoBehaviour
 
         transform.position = startPoint.position;
         _navMeshAgent.SetDestination(endPoint.position);
+        _currentState = AIState.Running;
+        hideCount = 0;
     }
 
     void Update()
@@ -59,7 +61,7 @@ public class AI : MonoBehaviour
                 break;
 
             case AIState.Dead:
-                // Die() is called once in TriggerDeath to avoid repeated calls
+                // Nothing happens, handled once
                 break;
         }
     }
@@ -70,7 +72,6 @@ public class AI : MonoBehaviour
         _navMeshAgent.isStopped = false;
         _navMeshAgent.SetDestination(endPoint.position);
 
-        // Only look for barriers if hide limit not reached
         if (hideCount < maxHideStops)
         {
             Transform bestBarrier = FindBestBarrier();
@@ -80,15 +81,14 @@ public class AI : MonoBehaviour
                 _navMeshAgent.SetDestination(_currentBarrier.position);
                 _currentState = AIState.Hiding;
                 hideCount++;
-                Debug.Log($"Entering Hide State at barrier: {_currentBarrier.name}, Hide count: {hideCount}/{maxHideStops}");
+                Debug.Log($"Hiding at: {_currentBarrier.name} | Hide count: {hideCount}/{maxHideStops}");
             }
         }
 
-        // Reached end
         if (!_navMeshAgent.pathPending && _navMeshAgent.remainingDistance <= _navMeshAgent.stoppingDistance && _currentState == AIState.Running)
         {
             Debug.Log("Duck reached endpoint!");
-            Destroy(gameObject); // Optional: escape animation
+            ReturnToPoolAndSpawnNext(); // Optional: Escape behavior instead
         }
     }
 
@@ -106,7 +106,6 @@ public class AI : MonoBehaviour
                 float distanceToEnd = Vector3.Distance(barrierPos, endPoint.position);
                 float distanceToAI = Vector3.Distance(transform.position, barrierPos);
 
-                // Prioritize barriers closer to endpoint but within reach
                 if (distanceToEnd < closestDistanceToEnd && distanceToAI <= barrierDetectRange)
                 {
                     closestDistanceToEnd = distanceToEnd;
@@ -138,6 +137,7 @@ public class AI : MonoBehaviour
         if (_currentState != AIState.Dead)
         {
             _currentState = AIState.Dead;
+            StopAllCoroutines(); // Stop hiding
             Die();
         }
     }
@@ -146,11 +146,22 @@ public class AI : MonoBehaviour
     {
         _animator?.SetTrigger("die");
         _navMeshAgent.isStopped = true;
-        
-        // Award points via UnityEvent
-        OnDeathPointsAwarded?.Invoke(pointsOnDeath);
-        Debug.Log($"Duck is Dead, awarded {pointsOnDeath} points");
 
-        Destroy(gameObject, 2f); // Delay to let animation play
+        OnDeathPointsAwarded?.Invoke(pointsOnDeath);
+        Debug.Log($"Duck died. Awarded {pointsOnDeath} points.");
+
+        StartCoroutine(ReturnToPoolAfterDelay(2f)); // Let animation play
+    }
+
+    IEnumerator ReturnToPoolAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        ReturnToPoolAndSpawnNext();
+    }
+
+    void ReturnToPoolAndSpawnNext()
+    {
+        SpawnManager.Instance.ReturnToPool(gameObject);
+        SpawnManager.Instance.SpawnDuck();
     }
 }
