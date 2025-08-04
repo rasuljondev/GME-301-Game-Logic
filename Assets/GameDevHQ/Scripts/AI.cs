@@ -11,15 +11,15 @@ public class AI : MonoBehaviour
     [SerializeField] private Transform endPoint;
 
     [Header("AI Settings")]
-    [SerializeField] private float hideTime = 3f; // Fixed hide time
-    [SerializeField] private int maxHideStops = 3; // Max number of hide stops
+    [SerializeField] private float hideTime = 3f;
+    [SerializeField] private int maxHideStops = 3;
     [SerializeField] private float barrierDetectRange = 5f;
     [SerializeField] private float barrierSearchRadius = 10f;
-    [SerializeField] private LayerMask barrierLayer; // For detecting barriers
+    [SerializeField] private LayerMask barrierLayer;
 
     [Header("Points Settings")]
     [SerializeField] private int pointsOnDeath = 50;
-    public UnityEvent<int> OnDeathPointsAwarded; // Event to notify points awarded
+    public UnityEvent<int> OnDeathPointsAwarded;
 
     private enum AIState { Running, Hiding, Dead }
     [SerializeField] private AIState _currentState = AIState.Running;
@@ -28,7 +28,7 @@ public class AI : MonoBehaviour
     private Animator _animator;
     private Transform _currentBarrier;
     private bool isHiding = false;
-    private int hideCount = 0; // Track number of hide stops
+    private int hideCount = 0;
 
     void Start()
     {
@@ -61,7 +61,6 @@ public class AI : MonoBehaviour
                 break;
 
             case AIState.Dead:
-                // Nothing happens, handled once
                 break;
         }
     }
@@ -88,7 +87,7 @@ public class AI : MonoBehaviour
         if (!_navMeshAgent.pathPending && _navMeshAgent.remainingDistance <= _navMeshAgent.stoppingDistance && _currentState == AIState.Running)
         {
             Debug.Log("Duck reached endpoint!");
-            ReturnToPoolAndSpawnNext(); // Optional: Escape behavior instead
+            ReturnToPoolAndSpawnNext();
         }
     }
 
@@ -137,21 +136,29 @@ public class AI : MonoBehaviour
         if (_currentState != AIState.Dead)
         {
             _currentState = AIState.Dead;
-            StopAllCoroutines(); // Stop hiding
+            StopAllCoroutines();
             Die();
         }
     }
 
-    void Die()
+private void Die()
+{
+    if (_animator != null)
     {
-        _animator?.SetTrigger("die");
-        _navMeshAgent.isStopped = true;
-
-        OnDeathPointsAwarded?.Invoke(pointsOnDeath);
-        Debug.Log($"Duck died. Awarded {pointsOnDeath} points.");
-
-        StartCoroutine(ReturnToPoolAfterDelay(2f)); // Let animation play
+        _animator.SetTrigger("die");
     }
+
+    _navMeshAgent.isStopped = true;
+
+    // Give player +50 score
+    UIManager.Instance.AddScore(pointsOnDeath);
+
+    // Update killed AI count in UI
+    UIManager.Instance.IncrementAIKilled();
+
+    // Return to pool after short delay
+    StartCoroutine(ReturnToPoolAfterDelay(2f));
+}
 
     IEnumerator ReturnToPoolAfterDelay(float delay)
     {
@@ -162,6 +169,6 @@ public class AI : MonoBehaviour
     void ReturnToPoolAndSpawnNext()
     {
         SpawnManager.Instance.ReturnToPool(gameObject);
-        SpawnManager.Instance.SpawnDuck();
+        SpawnManager.Instance.SpawnDuckAfterDelay(1f); // ✅ Fixed coroutine call
     }
 }

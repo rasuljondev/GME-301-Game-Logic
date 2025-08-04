@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -14,7 +15,6 @@ public class SpawnManager : MonoBehaviour
 
     void Awake()
     {
-        // Singleton enforcement
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
@@ -24,7 +24,6 @@ public class SpawnManager : MonoBehaviour
             Instance = this;
         }
 
-        // Create duck pool
         for (int i = 0; i < poolSize; i++)
         {
             GameObject duck = Instantiate(duckPrefab);
@@ -35,7 +34,6 @@ public class SpawnManager : MonoBehaviour
 
     void Start()
     {
-        // Spawn one AI duck at start
         SpawnDuck();
     }
 
@@ -52,6 +50,17 @@ public class SpawnManager : MonoBehaviour
         {
             Debug.LogWarning("No ducks left in pool!");
         }
+    }
+
+    public void SpawnDuckAfterDelay(float delay)
+    {
+        StartCoroutine(SpawnAfterDelayRoutine(delay));
+    }
+
+    private IEnumerator SpawnAfterDelayRoutine(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        SpawnDuck();
     }
 
     public void ReturnToPool(GameObject duck)
