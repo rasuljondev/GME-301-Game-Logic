@@ -21,6 +21,12 @@ public class AI : MonoBehaviour
     [SerializeField] private int pointsOnDeath = 50;
     public UnityEvent<int> OnDeathPointsAwarded;
 
+    [Header("Audio")]
+    [SerializeField] private AudioClip deathSound;
+    [SerializeField] private AudioClip completedTrackSound; // ✅ NEW: Sound when AI finishes path
+
+    private AudioSource _audioSource;
+
     private enum AIState { Running, Hiding, Dead }
     [SerializeField] private AIState _currentState = AIState.Running;
 
@@ -34,6 +40,7 @@ public class AI : MonoBehaviour
     {
         _navMeshAgent = GetComponent<NavMeshAgent>();
         _animator = GetComponent<Animator>();
+        _audioSource = GetComponent<AudioSource>();
 
         if (_navMeshAgent == null || startPoint == null || endPoint == null)
         {
@@ -54,12 +61,10 @@ public class AI : MonoBehaviour
             case AIState.Running:
                 RunBehavior();
                 break;
-
             case AIState.Hiding:
                 if (!isHiding)
                     StartCoroutine(HideRoutine());
                 break;
-
             case AIState.Dead:
                 break;
         }
@@ -141,24 +146,32 @@ public class AI : MonoBehaviour
         }
     }
 
-private void Die()
-{
-    if (_animator != null)
+    private void Die()
     {
-        _animator.SetTrigger("die");
+        if (_animator != null)
+        {
+            _animator.SetTrigger("die");
+        }
+
+        _navMeshAgent.isStopped = true;
+
+        if (deathSound != null)
+        {
+            Debug.Log("Playing death sound!");
+            GameObject tempAudio = new GameObject("TempDeathSound");
+            AudioSource source = tempAudio.AddComponent<AudioSource>();
+            source.clip = deathSound;
+            source.spatialBlend = 0f;
+            source.volume = 1f;
+            source.Play();
+            Destroy(tempAudio, deathSound.length + 0.1f);
+        }
+
+        UIManager.Instance.AddScore(pointsOnDeath);
+        UIManager.Instance.IncrementAIKilled();
+
+        StartCoroutine(ReturnToPoolAfterDelay(deathSound != null ? deathSound.length + 0.2f : 2f));
     }
-
-    _navMeshAgent.isStopped = true;
-
-    // Give player +50 score
-    UIManager.Instance.AddScore(pointsOnDeath);
-
-    // Update killed AI count in UI
-    UIManager.Instance.IncrementAIKilled();
-
-    // Return to pool after short delay
-    StartCoroutine(ReturnToPoolAfterDelay(2f));
-}
 
     IEnumerator ReturnToPoolAfterDelay(float delay)
     {
@@ -168,7 +181,19 @@ private void Die()
 
     void ReturnToPoolAndSpawnNext()
     {
+        // ✅ Play sound when AI reaches destination
+        if (completedTrackSound != null)
+        {
+            GameObject tempAudio = new GameObject("TempCompletedSound");
+            AudioSource source = tempAudio.AddComponent<AudioSource>();
+            source.clip = completedTrackSound;
+            source.spatialBlend = 0f;
+            source.volume = 1f;
+            source.Play();
+            Destroy(tempAudio, completedTrackSound.length + 0.1f);
+        }
+
         SpawnManager.Instance.ReturnToPool(gameObject);
-        SpawnManager.Instance.SpawnDuckAfterDelay(1f); // ✅ Fixed coroutine call
+        SpawnManager.Instance.SpawnDuckAfterDelay(1f);
     }
 }
