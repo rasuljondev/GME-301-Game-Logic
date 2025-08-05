@@ -9,7 +9,7 @@ public class SpawnManager : MonoBehaviour
     [Header("Duck Setup")]
     [SerializeField] private GameObject duckPrefab;
     [SerializeField] private Transform startPoint;
-    [SerializeField] private int poolSize = 10;
+    [SerializeField] private int poolSize = 100;
 
     private Queue<GameObject> duckPool = new Queue<GameObject>();
 
@@ -35,6 +35,7 @@ public class SpawnManager : MonoBehaviour
     void Start()
     {
         SpawnDuck();
+        FindObjectOfType<GameManager>().InitializeGame(poolSize);
     }
 
     public void SpawnDuck()

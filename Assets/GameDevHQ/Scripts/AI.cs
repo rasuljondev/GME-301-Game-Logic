@@ -35,12 +35,14 @@ public class AI : MonoBehaviour
     private Transform _currentBarrier;
     private bool isHiding = false;
     private int hideCount = 0;
+    private GameManager _gameManager;
 
     void Start()
     {
         _navMeshAgent = GetComponent<NavMeshAgent>();
         _animator = GetComponent<Animator>();
         _audioSource = GetComponent<AudioSource>();
+        _gameManager = FindObjectOfType<GameManager>();
 
         if (_navMeshAgent == null || startPoint == null || endPoint == null)
         {
@@ -169,6 +171,7 @@ public class AI : MonoBehaviour
 
         UIManager.Instance.AddScore(pointsOnDeath);
         UIManager.Instance.IncrementAIKilled();
+        _gameManager.OnDuckKilled();
 
         StartCoroutine(ReturnToPoolAfterDelay(deathSound != null ? deathSound.length + 0.2f : 2f));
     }
@@ -193,6 +196,7 @@ public class AI : MonoBehaviour
             Destroy(tempAudio, completedTrackSound.length + 0.1f);
         }
 
+        _gameManager.OnDuckEscaped();
         SpawnManager.Instance.ReturnToPool(gameObject);
         SpawnManager.Instance.SpawnDuckAfterDelay(1f);
     }
