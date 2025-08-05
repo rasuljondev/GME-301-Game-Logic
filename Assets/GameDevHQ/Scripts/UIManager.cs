@@ -8,8 +8,6 @@ public class UIManager : MonoBehaviour
     [SerializeField] private Text scoreText;
     [SerializeField] private Text aiKilledText;
     [SerializeField] private Text timerText;
-    [SerializeField] private Text winLoseText;
-    [SerializeField] private Text winText;
 
     private int score = 0;
     private int aiKilledCount = 0;
@@ -46,17 +44,23 @@ public class UIManager : MonoBehaviour
             timerText.text = "Time: " + Mathf.RoundToInt(seconds).ToString();
     }
 
-    // Add this method to display win screen
-    public void ShowWinScreen()
+    // Add this method to set timer text for win/lose conditions
+    public void SetTimerText(string message)
     {
-        if (winText != null)
-            winText.text = "You Win! All Ducks Killed!";
+        if (timerText != null)
+            timerText.text = message;
     }
 
-    // Add this method to display lose screen
+    // Existing ShowWinScreen and ShowLoseScreen methods
+    public void ShowWinScreen()
+    {
+        if (timerText != null)
+            timerText.text = "You Win! All Ducks Killed!";
+    }
+
     public void ShowLoseScreen()
     {
-        if (winLoseText != null)
-            winLoseText.text = "Game Over! Too Many Ducks Escaped!";
+        if (timerText != null)
+            timerText.text = "Game Over! Too Many Ducks Escaped!";
     }
 }

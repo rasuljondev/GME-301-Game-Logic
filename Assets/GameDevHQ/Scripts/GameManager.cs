@@ -8,7 +8,7 @@ public class GameManager : MonoBehaviour
     private int totalDucksToSpawn = 10; // Matches SpawnManager's poolSize
     private int ducksKilled = 0;
     private int ducksEscaped = 0;
-    private float maxEscapePercentage = 0.2f; // 20% (2 out of 10 ducks)
+    private float maxEscapePercentage = 0.5f; // 50% (5 out of 10 ducks)
     private bool gameEnded = false;
 
     // Add this method to initialize game state
@@ -42,7 +42,8 @@ public class GameManager : MonoBehaviour
         if (ducksKilled >= totalDucksToSpawn)
         {
             gameEnded = true;
-            UIManager.Instance.ShowWinScreen(); // Display win screen
+            UIManager.Instance.UpdateTimer(0f); // Stop timer display
+            UIManager.Instance.ShowWinScreen(); // Display win message
             Debug.Log("Win! All ducks killed!");
         }
     }
@@ -54,14 +55,18 @@ public class GameManager : MonoBehaviour
         if (escapePercentage > maxEscapePercentage)
         {
             gameEnded = true;
-            UIManager.Instance.ShowLoseScreen(); // Display lose screen
-            Debug.Log("Lose! Too many ducks escaped!");
+            UIManager.Instance.UpdateTimer(0f); // Stop timer display
+            UIManager.Instance.ShowLoseScreen(); // Display lose message
+            Debug.Log("Lose! More than 50% of ducks escaped!");
         }
     }
 
     void Update()
     {
-        timeSpent += Time.deltaTime;
-        UIManager.Instance.UpdateTimer(timeSpent);
+        if (!gameEnded) // Only update timer if game hasn't ended
+        {
+            timeSpent += Time.deltaTime;
+            UIManager.Instance.UpdateTimer(timeSpent);
+        }
     }
 }
